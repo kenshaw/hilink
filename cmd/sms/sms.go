@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net/http"
-	"net/http/httputil"
+	"log"
 	"os"
 
 	"github.com/knq/hilink"
@@ -19,36 +18,21 @@ var (
 	flagList     = flag.Bool("list", false, "list sms messages in inbox")
 )
 
-type httpLogger struct {
-	RoundTripper http.RoundTripper
-}
-
-func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
-	reqBody, _ := httputil.DumpRequestOut(req, true)
-
-	res, err := hl.RoundTripper.RoundTrip(req)
-	resBody, _ := httputil.DumpResponse(res, true)
-
-	fmt.Println("------------------------------")
-	fmt.Printf("%s\n\n", reqBody)
-	fmt.Printf("%s", resBody)
-	fmt.Println("------------------------------\n\n")
-
-	return res, err
-}
-
 func main() {
+	var err error
+
 	flag.Parse()
 
-	// setup logger
+	// options
+	opts := []hilink.Option{
+		hilink.URL(*flagEndpoint),
+	}
 	if *flagDebug {
-		http.DefaultTransport = &httpLogger{
-			RoundTripper: http.DefaultTransport,
-		}
+		opts = append(opts, hilink.Log(log.Printf, log.Printf))
 	}
 
 	// create client
-	client, err := hilink.NewClient(*flagEndpoint)
+	client, err := hilink.NewClient(opts...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
