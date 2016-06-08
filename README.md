@@ -38,3 +38,10 @@ $ go build ./cmd/hinfo/ && ./hinfo
   "workmode": "LTE"
 }
 ```
+
+# TODO
+
+This API is currently incomplete, as I only have one type of Hilink device to
+test with and  because I have not attempted to do an exhaustive list of all API
+calls. That said, it should be fairly easy to write a new API call by following
+the existing API scheme. Pull requests are greatly appreciated, and encouraged!
