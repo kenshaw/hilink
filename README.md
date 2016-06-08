@@ -24,7 +24,7 @@ Here is the relevant information taken from the API using the
 [hinfo](cmd/hinfo) tool:
 ```sh
 $ cd $GOPATH/src/github.com/knq/hilink
-$ go build ./cmd/hinfo/ ./hinfo
+$ go build ./cmd/hinfo/ && ./hinfo
 {
   "Classify": "hilink",
   "DeviceName": "E3370",
