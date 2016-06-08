@@ -1,4 +1,6 @@
 /cmd/sms/sms
 /cmd/ussd/ussd
+/cmd/hinfo/hinfo
 /sms
 /ussd
+/hinfo
