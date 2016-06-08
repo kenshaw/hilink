@@ -77,12 +77,12 @@ func doList(client *hilink.Client, bt hilink.SmsBoxType) {
 		os.Exit(1)
 	}
 
-	buf, err := json.Marshal(c)
+	// convert to json
+	buf, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf(">>> stuff: %s", string(buf))
-
+	fmt.Fprintf(os.Stdout, "%s\n", string(buf))
 }

@@ -1,7 +1,6 @@
 package hilink
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -64,11 +63,6 @@ func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	hl.requestLogf("%s", reqBody)
 	hl.responseLogf("%s", resBody)
 
-	/*fmt.Println("------------------------------")
-	fmt.Printf("%s\n\n", reqBody)
-	fmt.Printf("%s", resBody)
-	fmt.Println("------------------------------\n\n")*/
-
 	return res, err
 }
 
@@ -76,8 +70,6 @@ func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 // respective logger.
 func Log(requestLogf, responseLogf Logf) Option {
 	return func(c *Client) error {
-		fmt.Printf(">>> here\n")
-
 		hl := &httpLogger{
 			requestLogf:  requestLogf,
 			responseLogf: responseLogf,
