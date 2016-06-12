@@ -16,6 +16,7 @@ var (
 	flagTo       = flag.String("to", "", "to")
 	flagMsg      = flag.String("msg", "", "message")
 	flagList     = flag.Bool("list", false, "list sms messages in inbox")
+	flagCount    = flag.Uint("c", 50, "message count for -list")
 )
 
 func main() {
@@ -40,7 +41,7 @@ func main() {
 
 	// handle list
 	if *flagList {
-		doList(client, hilink.SmsBoxTypeInbox)
+		doList(client, hilink.SmsBoxTypeInbox, *flagCount)
 		return
 	}
 
@@ -69,16 +70,16 @@ func main() {
 }
 
 // doList lists the sms in the inbox in json format.
-func doList(client *hilink.Client, bt hilink.SmsBoxType) {
+func doList(client *hilink.Client, bt hilink.SmsBoxType, count uint) {
 	// get sms counts
-	c, err := client.SmsCount()
+	l, err := client.SmsList(bt, 1, count, false, true)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
 	// convert to json
-	buf, err := json.MarshalIndent(c, "", "  ")
+	buf, err := json.MarshalIndent(l, "", "  ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)

@@ -19,6 +19,7 @@ import (
 
 // most of these API calls are taken from: https://blog.hqcodeshop.fi/archives/259-Huawei-E5186-AJAX-API.html
 // also see: https://github.com/BlackyPanther/Huawei-HiLink/blob/master/hilink.class.php
+// also see: http://www.bez-kabli.pl/viewtopic.php?t=42168
 
 const (
 	// DefaultURL is the default URL endpoint for the Hilink WebUI.
