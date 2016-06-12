@@ -102,6 +102,7 @@ func boolToString(b bool) string {
 //
 // see: http://www.bez-kabli.pl/viewtopic.php?t=42168
 var ErrorCodeMessageMap = map[string]string{
+	"-1":     "system not available",
 	"100002": "not supported by firmware or incorrect API path",
 	"100003": "no power",
 	"100004": "system busy",
@@ -114,16 +115,16 @@ var ErrorCodeMessageMap = map[string]string{
 	"108002": "invalid password",
 	"108003": "user already logged in",
 	"108006": "invalid username or password",
-	"108007": "invalid username, password, or session limit reached",
+	"108007": "invalid username, password, or session timeout",
 	"110024": "battery charge less than 50%",
 	"111019": "no network response",
 	"111020": "network timeout",
-	"111022": "network is not supported",
+	"111022": "network not supported",
 	"113018": "system busy",
 	"114001": "file already exists",
 	"114002": "file already exists",
 	"114003": "SD card currently in use",
-	"114004": "shared path does not exist",
+	"114004": "path does not exist",
 	"114005": "path too long",
 	"114006": "no permission for specified file or directory",
 	"115001": "unknown error",
