@@ -17,6 +17,7 @@ var (
 	flagCheck    = flag.Bool("check", false, "check ussd status")
 	flagCode     = flag.String("code", "", "ussd code to send")
 	flagNoWait   = flag.Bool("nowait", false, "exit immediately after sending ussd code")
+	flagRelease  = flag.Bool("r", false, "release ussd session")
 )
 
 func main() {
@@ -36,6 +37,21 @@ func main() {
 	client, err := hilink.NewClient(opts...)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *flagRelease {
+		ok, err := client.UssdRelease()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		if !ok {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Fprintf(os.Stdout, "ussd session released\n")
+		return
 	}
 
 	if *flagCheck {

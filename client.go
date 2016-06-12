@@ -663,3 +663,8 @@ func (c *Client) UssdCode(code string) (bool, error) {
 func (c *Client) UssdContent() (string, error) {
 	return c.doReqString("api/ussd/get", nil, "content")
 }
+
+// UssdRelease releases the active USSD session.
+func (c *Client) UssdRelease() (bool, error) {
+	return c.doReqCheckOK("api/ussd/release", nil)
+}
