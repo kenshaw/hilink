@@ -557,12 +557,12 @@ func (c *Client) ProfileInfo() (XMLData, error) {
 }
 
 // SmsList retrieves a list of SMS from an inbox.
-func (c *Client) SmsList(bt SmsBoxType, page, count uint, ascending, unreadPreferred bool) (XMLData, error) {
+func (c *Client) SmsList(boxType, page, count uint, ascending, unreadPreferred bool) (XMLData, error) {
 	// execute request -- note: the order is important!
 	return c.Do("api/sms/sms-list", SimpleRequestXML(
 		"PageIndex", fmt.Sprintf("%d", page),
 		"ReadCount", fmt.Sprintf("%d", count),
-		"BoxType", fmt.Sprintf("%d", bt),
+		"BoxType", fmt.Sprintf("%d", boxType),
 		"SortType", "0",
 		"Ascending", boolToString(ascending),
 		"UnreadPreferred", boolToString(unreadPreferred),

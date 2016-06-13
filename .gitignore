@@ -1,6 +1,8 @@
 /cmd/sms/sms
 /cmd/ussd/ussd
 /cmd/hinfo/hinfo
+/cmd/hlcli/hlcli
 /sms
 /ussd
 /hinfo
+/hlcli
