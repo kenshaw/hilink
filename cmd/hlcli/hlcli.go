@@ -222,6 +222,16 @@ func main() {
 		doExit("error: %v", out[1].Interface())
 	}
 
+	// special handling for bool
+	if out[0].Type().Kind() == reflect.Bool {
+		if out[0].Bool() {
+			os.Stdout.WriteString("OK\n")
+			return
+		} else {
+			doExit("failed")
+		}
+	}
+
 	// json encode and output
 	buf, err := json.MarshalIndent(out[0].Interface(), "", "  ")
 	if err != nil {
