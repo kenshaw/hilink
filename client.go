@@ -353,7 +353,7 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 	return s[len("SessionID="):], t, nil
 }
 
-// SetSessionIDAndTokenID sets the sessionID for the Client.
+// SetSessionAndTokenID sets the sessionID for the Client.
 func (c *Client) SetSessionAndTokenID(sessionID, tokenID string) error {
 	c.Lock()
 	defer c.Unlock()
@@ -433,7 +433,7 @@ func (c *Client) CradleMAC() (string, error) {
 	return c.doReqString("api/cradle/current-mac", nil, "currentmac")
 }
 
-// AutorunVersion retrieves autorun version.
+// AutorunVersion retrieves device autorun version.
 func (c *Client) AutorunVersion() (string, error) {
 	return c.doReqString("api/device/autorun-version", nil, "Version")
 }
@@ -443,7 +443,7 @@ func (c *Client) DeviceBasicInfo() (XMLData, error) {
 	return c.Do("api/device/basic_information", nil)
 }
 
-// PublicKey retrieves hilink public key.
+// PublicKey retrieves webserver public key.
 func (c *Client) PublicKey() (string, error) {
 	return c.doReqString("api/webserver/publickey", nil, "encpubkeyn")
 }
@@ -455,7 +455,7 @@ func (c *Client) DeviceControl(code uint) (bool, error) {
 	})
 }
 
-// DeviceReboot restarts the Hilink device.
+// DeviceReboot restarts the device.
 func (c *Client) DeviceReboot() (bool, error) {
 	return c.DeviceControl(1)
 }
@@ -492,13 +492,13 @@ func (c *Client) DeviceFeatures() (XMLData, error) {
 	return c.Do("api/device/device-feature-switch", nil)
 }
 
-// DeviceInfo retrieves Hilink device information.
+// DeviceInfo retrieves general device information.
 func (c *Client) DeviceInfo() (XMLData, error) {
 	return c.Do("api/device/information", nil)
 }
 
-// DeviceMode sets the device mode (0-project, 1-debug).
-func (c *Client) DeviceMode(mode uint) (bool, error) {
+// DeviceModeSet sets the device mode (0-project, 1-debug).
+func (c *Client) DeviceModeSet(mode uint) (bool, error) {
 	return c.doReqCheckOK("api/device/mode", XMLData{
 		"mode": fmt.Sprintf("%d", mode),
 	})
@@ -519,7 +519,7 @@ func (c *Client) TetheringFeatures() (XMLData, error) {
 	return c.Do("api/device/usb-tethering-switch", nil)
 }
 
-// SignalInfo retrieves signal information.
+// SignalInfo retrieves network signal information.
 func (c *Client) SignalInfo() (XMLData, error) {
 	return c.Do("api/device/signal", nil)
 }
@@ -556,7 +556,7 @@ func (c *Client) SimInfo() (XMLData, error) {
 	return c.Do("api/monitoring/converged-status", nil)
 }
 
-// StatusInfo retrieves Hilink device and connection status information.
+// StatusInfo retrieves general device status information.
 func (c *Client) StatusInfo() (XMLData, error) {
 	return c.Do("api/monitoring/status", nil)
 }
@@ -770,8 +770,7 @@ func (c *Client) SmsDelete(id uint) (bool, error) {
 	))
 }*/
 
-// UssdStatus determines if the Hilink device is currently engaged in a USSD
-// session.
+// UssdStatus retrieves current USSD session status information.
 func (c *Client) UssdStatus() (UssdState, error) {
 	s, err := c.doReqString("api/ussd/status", nil, "result")
 	if err != nil {

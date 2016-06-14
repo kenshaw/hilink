@@ -169,6 +169,8 @@ func main() {
 	flagDebug := fs.Bool("v", false, "enable verbose")
 	flagEndpoint := fs.String("endpoint", "http://192.168.8.1/", "api endpoint")
 
+	isVariadic := method.Type.IsVariadic()
+
 	// add method params to flagset
 	in := make([]reflect.Value, method.Type.NumIn())
 	for i := 1; i < method.Type.NumIn(); i++ {
@@ -184,6 +186,12 @@ func main() {
 		case reflect.Uint:
 			v = fs.Uint(n, 0, "")
 		case reflect.String:
+			v = fs.String(n, "", "")
+		}
+
+		// special ...string case
+		if p.Kind() == reflect.Slice && isVariadic &&
+			i == method.Type.NumIn()-1 && reflect.String == p.Elem().Kind() {
 			v = fs.String(n, "", "")
 		}
 

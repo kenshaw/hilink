@@ -50,7 +50,7 @@ func main() {
 	for _, d := range f.Decls {
 		fd, ok := d.(*ast.FuncDecl)
 		if ok && fd.Recv != nil {
-			str := `"` + fd.Name.Name + `": "` + strings.Replace(fd.Doc.Text(), "\n", "", -1) + "\",\n"
+			str := `"` + fd.Name.Name + `": "` + strings.TrimSpace(strings.Replace(fd.Doc.Text(), "\n", " ", -1)) + "\",\n"
 			buf.WriteString(str)
 		}
 	}
