@@ -72,7 +72,7 @@ func main() {
 // doList lists the sms in the inbox in json format.
 func doList(client *hilink.Client, bt hilink.SmsBoxType, count uint) {
 	// get sms counts
-	l, err := client.SmsList(bt, 1, count, false, true)
+	l, err := client.SmsList(uint(bt), 1, count, false, false, true)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
