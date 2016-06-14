@@ -33,6 +33,9 @@ $ hlcli smslist --help
 # get network connection information from non-standard API endpoint
 $ hlcli networkinfo -endpoint http://192.168.245.1/
 
+# send sms with verbose output
+$ hlcli smssend -to='+62....' -msg='your message' -v
+
 # send ussd code with verbose output
 $ hlcli ussdcode -code -v
 ```
