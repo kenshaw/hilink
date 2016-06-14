@@ -17,7 +17,7 @@ import (
 	"github.com/clbanning/mxj"
 )
 
-// most of these API calls are taken from: https://blog.hqcodeshop.fi/archives/259-Huawei-E5186-AJAX-API.html
+// see: https://blog.hqcodeshop.fi/archives/259-Huawei-E5186-AJAX-API.html
 // also see: https://github.com/BlackyPanther/Huawei-HiLink/blob/master/hilink.class.php
 // also see: http://www.bez-kabli.pl/viewtopic.php?t=42168
 
@@ -26,7 +26,7 @@ const (
 	DefaultURL = "http://192.168.8.1/"
 
 	// DefaultTimeout is the default timeout.
-	DefaultTimeout = 10 * time.Second
+	DefaultTimeout = 30 * time.Second
 
 	// TokenHeader is the header used by the WebUI for CSRF tokens.
 	TokenHeader = "__RequestVerificationToken"
@@ -353,7 +353,7 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 	return s[len("SessionID="):], t, nil
 }
 
-// SetSessionID sets the sessionID for the Client.
+// SetSessionIDAndTokenID sets the sessionID for the Client.
 func (c *Client) SetSessionAndTokenID(sessionID, tokenID string) error {
 	c.Lock()
 	defer c.Unlock()
@@ -376,17 +376,17 @@ func (c *Client) SetSessionAndTokenID(sessionID, tokenID string) error {
 	return nil
 }
 
-// GlobalConfig retrieves the global Hilink configuration.
+// GlobalConfig retrieves global Hilink configuration.
 func (c *Client) GlobalConfig() (XMLData, error) {
 	return c.Do("config/global/config.xml", nil)
 }
 
-// NetworkTypes retrieves the available network types.
+// NetworkTypes retrieves available network types.
 func (c *Client) NetworkTypes() (XMLData, error) {
 	return c.Do("config/global/net-type.xml", nil)
 }
 
-// PCAssistantConfig retrieves the PC Assistant configuration.
+// PCAssistantConfig retrieves PC Assistant configuration.
 func (c *Client) PCAssistantConfig() (XMLData, error) {
 	return c.Do("config/pcassistant/config.xml", nil)
 }
@@ -396,7 +396,7 @@ func (c *Client) DeviceConfig() (XMLData, error) {
 	return c.Do("config/deviceinformation/config.xml", nil)
 }
 
-// WebUIConfig retrieves the WebUI configuration.
+// WebUIConfig retrieves WebUI configuration.
 func (c *Client) WebUIConfig() (XMLData, error) {
 	return c.Do("config/webuicfg/config.xml", nil)
 }
@@ -406,14 +406,31 @@ func (c *Client) SmsConfig() (XMLData, error) {
 	return c.Do("api/sms/config", nil)
 }
 
-// WlanBasicSettings returns the basic WLAN settings.
-func (c *Client) WlanBasicSettings() (XMLData, error) {
+// WlanConfig retrieves basic WLAN settings.
+func (c *Client) WlanConfig() (XMLData, error) {
 	return c.Do("api/wlan/basic-settings", nil)
+}
+
+// DhcpConfig retrieves DHCP configuration.
+func (c *Client) DhcpConfig() (XMLData, error) {
+	return c.Do("api/dhcp/settings", nil)
 }
 
 // CradleStatusInfo retrieves cradle status information.
 func (c *Client) CradleStatusInfo() (XMLData, error) {
 	return c.Do("api/cradle/status-info", nil)
+}
+
+// CradleMACSet sets the MAC address for the cradle.
+func (c *Client) CradleMACSet(addr string) (bool, error) {
+	return c.doReqCheckOK("api/cradle/current-mac", XMLData{
+		"currentmac": addr,
+	})
+}
+
+// CradleMAC retrieves cradle MAC address.
+func (c *Client) CradleMAC() (string, error) {
+	return c.doReqString("api/cradle/current-mac", nil, "currentmac")
 }
 
 // AutorunVersion retrieves autorun version.
@@ -426,14 +443,48 @@ func (c *Client) DeviceBasicInfo() (XMLData, error) {
 	return c.Do("api/device/basic_information", nil)
 }
 
-// PublicKey retrieves the hilink public key.
+// PublicKey retrieves hilink public key.
 func (c *Client) PublicKey() (string, error) {
 	return c.doReqString("api/webserver/publickey", nil, "encpubkeyn")
 }
 
-// Reboot restarts the Hilink device.
-func (c *Client) Reboot() (bool, error) {
-	return c.doReqCheckOK("api/device/control", XMLData{"Control": "1"})
+// DeviceControl sends a control code to the device.
+func (c *Client) DeviceControl(code uint) (bool, error) {
+	return c.doReqCheckOK("api/device/control", XMLData{
+		"Control": fmt.Sprintf("%d", code),
+	})
+}
+
+// DeviceReboot restarts the Hilink device.
+func (c *Client) DeviceReboot() (bool, error) {
+	return c.DeviceControl(1)
+}
+
+// DeviceReset resets the device configuration.
+func (c *Client) DeviceReset() (bool, error) {
+	return c.DeviceControl(2)
+}
+
+// DeviceBackup backups device configuration and retrieves backed up
+// configuration data as a base64 encoded string.
+func (c *Client) DeviceBackup() (string, error) {
+	// cause backup to be generated
+	ok, err := c.DeviceControl(3)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.New("unable to backup device configuration")
+	}
+
+	// retrieve data
+	//res, err := c.doReq("nvram.bak")
+	return " -- not implemented -- ", nil
+}
+
+// DeviceShutdown shuts down the device.
+func (c *Client) DeviceShutdown() (bool, error) {
+	return c.DeviceControl(4)
 }
 
 // DeviceFeatures retrieves device feature information.
@@ -444,6 +495,28 @@ func (c *Client) DeviceFeatures() (XMLData, error) {
 // DeviceInfo retrieves Hilink device information.
 func (c *Client) DeviceInfo() (XMLData, error) {
 	return c.Do("api/device/information", nil)
+}
+
+// DeviceMode sets the device mode (0-project, 1-debug).
+func (c *Client) DeviceMode(mode uint) (bool, error) {
+	return c.doReqCheckOK("api/device/mode", XMLData{
+		"mode": fmt.Sprintf("%d", mode),
+	})
+}
+
+// FastbootFeatures retrieves fastboot feature information.
+func (c *Client) FastbootFeatures() (XMLData, error) {
+	return c.Do("api/device/fastbootswitch", nil)
+}
+
+// PowerFeatures retrieves power feature information.
+func (c *Client) PowerFeatures() (XMLData, error) {
+	return c.Do("api/device/powersaveswitch", nil)
+}
+
+// TetheringFeatures retrieves USB tethering feature information.
+func (c *Client) TetheringFeatures() (XMLData, error) {
+	return c.Do("api/device/usb-tethering-switch", nil)
 }
 
 // SignalInfo retrieves signal information.
@@ -461,9 +534,16 @@ func (c *Client) GlobalFeatures() (XMLData, error) {
 	return c.Do("api/global/module-switch", nil)
 }
 
-// Language retrieves the current language.
+// Language retrieves current language.
 func (c *Client) Language() (string, error) {
 	return c.doReqString("api/language/current-language", nil, "CurrentLanguage")
+}
+
+// LanguageSet sets the language.
+func (c *Client) LanguageSet(lang string) (bool, error) {
+	return c.doReqCheckOK("api/language/current-language", XMLData{
+		"CurrentLanguage": lang,
+	})
 }
 
 // NotificationInfo retrieves notification information.
@@ -476,14 +556,31 @@ func (c *Client) SimInfo() (XMLData, error) {
 	return c.Do("api/monitoring/converged-status", nil)
 }
 
-// StatusInfo retrieves Hilink connection status information.
+// StatusInfo retrieves Hilink device and connection status information.
 func (c *Client) StatusInfo() (XMLData, error) {
 	return c.Do("api/monitoring/status", nil)
 }
 
-// TrafficStatistics retrieves traffic statistics.
-func (c *Client) TrafficStatistics() (XMLData, error) {
+// TrafficInfo retrieves traffic statistic information.
+func (c *Client) TrafficInfo() (XMLData, error) {
 	return c.Do("api/monitoring/traffic-statistics", nil)
+}
+
+// TrafficClear clears the current traffic statistics.
+func (c *Client) TrafficClear() (bool, error) {
+	return c.doReqCheckOK("api/monitoring/clear-traffic", XMLData{
+		"ClearTraffic": "1",
+	})
+}
+
+// MonthInfo retrieves the month download statistic information.
+func (c *Client) MonthInfo() (XMLData, error) {
+	return c.Do("api/monitoring/month_statistics", nil)
+}
+
+// WlanMonthInfo retrieves the WLAN month download statistic information.
+func (c *Client) WlanMonthInfo() (XMLData, error) {
+	return c.Do("api/monitoring/month_statistics_wlan", nil)
 }
 
 // NetworkInfo retrieves network provider information.
@@ -496,9 +593,28 @@ func (c *Client) WifiFeatures() (XMLData, error) {
 	return c.Do("api/wlan/wifi-feature-switch", nil)
 }
 
-// ModeInfo retrieves network mode information.
+// ModeList retrieves available network modes.
+func (c *Client) ModeList() (XMLData, error) {
+	return c.Do("api/net/net-mode-list", nil)
+}
+
+// ModeInfo retrieves network mode settings information.
 func (c *Client) ModeInfo() (XMLData, error) {
 	return c.Do("api/net/net-mode", nil)
+}
+
+// ModeNetworkInfo retrieves current network mode information.
+func (c *Client) ModeNetworkInfo() (XMLData, error) {
+	return c.Do("api/net/network", nil)
+}
+
+// ModeSet sets the network mode.
+func (c *Client) ModeSet(netMode, netBand, lteBand string) (bool, error) {
+	return c.doReqCheckOK("api/net/net-mode", SimpleRequestXML(
+		"NetworkMode", netMode,
+		"NetworkBand", netBand,
+		"LTEBand", lteBand,
+	))
 }
 
 // PinInfo retrieves SIM PIN status information.
@@ -536,19 +652,33 @@ func (c *Client) PinChange(pin, new string) (bool, error) {
 	return c.doReqPin(PinTypeChange, pin, new, "")
 }
 
-// PinEnterPuk enters a puk SIM PIN.
+// PinEnterPuk enters a SIM PIN puk.
 func (c *Client) PinEnterPuk(puk, new string) (bool, error) {
 	return c.doReqPin(PinTypeEnterPuk, new, new, puk)
 }
 
+// PinSaveInfo retrieves SIM PIN save information.
+func (c *Client) PinSaveInfo() (XMLData, error) {
+	return c.Do("api/pin/save-pin", nil)
+}
+
+// PinSimlockInfo retrieves SIM lock information.
+func (c *Client) PinSimlockInfo() (XMLData, error) {
+	return c.Do("api/pin/simlock", nil)
+}
+
 // Connect connects the Hilink device to the network provider.
 func (c *Client) Connect() (bool, error) {
-	return c.doReqCheckOK("api/dialup/dial", XMLData{"Action": "1"})
+	return c.doReqCheckOK("api/dialup/dial", XMLData{
+		"Action": "1",
+	})
 }
 
 // Disconnect disconnects the Hilink device from the network provider.
 func (c *Client) Disconnect() (bool, error) {
-	return c.doReqCheckOK("api/dialup/dial", XMLData{"Action": "0"})
+	return c.doReqCheckOK("api/dialup/dial", XMLData{
+		"Action": "0",
+	})
 }
 
 // ProfileInfo retrieves profile information (ie, APN).
@@ -556,20 +686,25 @@ func (c *Client) ProfileInfo() (XMLData, error) {
 	return c.Do("api/dialup/profiles", nil)
 }
 
-// SmsList retrieves a list of SMS from an inbox.
-func (c *Client) SmsList(boxType, page, count uint, ascending, unreadPreferred bool) (XMLData, error) {
+// SmsFeatures retrieves SMS feature information.
+func (c *Client) SmsFeatures() (XMLData, error) {
+	return c.Do("api/sms/sms-feature-switch", nil)
+}
+
+// SmsList retrieves list of SMS in an inbox.
+func (c *Client) SmsList(boxType, page, count uint, sortByName, ascending, unreadPreferred bool) (XMLData, error) {
 	// execute request -- note: the order is important!
 	return c.Do("api/sms/sms-list", SimpleRequestXML(
 		"PageIndex", fmt.Sprintf("%d", page),
 		"ReadCount", fmt.Sprintf("%d", count),
 		"BoxType", fmt.Sprintf("%d", boxType),
-		"SortType", "0",
+		"SortType", boolToString(sortByName),
 		"Ascending", boolToString(ascending),
 		"UnreadPreferred", boolToString(unreadPreferred),
 	))
 }
 
-// SmsCount retrieves the count of SMS per inbox type.
+// SmsCount retrieves count of SMS per inbox type.
 func (c *Client) SmsCount() (XMLData, error) {
 	return c.Do("api/sms/sms-count", nil)
 }
@@ -598,22 +733,22 @@ func (c *Client) SmsSend(msg string, to ...string) (bool, error) {
 	))
 }
 
-// SmsSendStatus retrieves the SMS send status information.
+// SmsSendStatus retrieves SMS send status information.
 func (c *Client) SmsSendStatus() (XMLData, error) {
 	return c.Do("api/sms/send-status", nil)
 }
 
-// SmsSetRead sets the read status of a SMS.
-func (c *Client) SmsSetRead(id string) (bool, error) {
+// SmsReadSet sets the read status of a SMS.
+func (c *Client) SmsReadSet(id string) (bool, error) {
 	return c.doReqCheckOK("api/sms/set-read", SimpleRequestXML(
 		"Index", id,
 	))
 }
 
 // SmsDelete deletes a specified SMS.
-func (c *Client) SmsDelete(id string) (bool, error) {
+func (c *Client) SmsDelete(id uint) (bool, error) {
 	return c.doReqCheckOK("api/sms/delete-sms", SimpleRequestXML(
-		"Index", id,
+		"Index", fmt.Sprintf("%d", id),
 	))
 }
 
@@ -660,7 +795,7 @@ func (c *Client) UssdCode(code string) (bool, error) {
 	))
 }
 
-// UssdContent retrieves the content buffer of the active USSD session.
+// UssdContent retrieves content buffer of the active USSD session.
 func (c *Client) UssdContent() (string, error) {
 	return c.doReqString("api/ussd/get", nil, "content")
 }
@@ -669,3 +804,87 @@ func (c *Client) UssdContent() (string, error) {
 func (c *Client) UssdRelease() (bool, error) {
 	return c.doReqCheckOK("api/ussd/release", nil)
 }
+
+// DdnsList retrieves list of DDNS providers.
+func (c *Client) DdnsList() (XMLData, error) {
+	return c.Do("api/ddns/ddns-list", nil)
+}
+
+// LogPath retrieves device log path (URL).
+func (c *Client) LogPath() (string, error) {
+	return c.doReqString("api/device/compresslogfile", nil, "LogPath")
+}
+
+// LogInfo retrieves current log setting information.
+func (c *Client) LogInfo() (XMLData, error) {
+	return c.Do("api/device/logsetting", nil)
+}
+
+// PhonebookGroupList retrieves list of the phonebook groups.
+func (c *Client) PhonebookGroupList(page, count uint, sortByName, ascending bool) (XMLData, error) {
+	return c.Do("api/pb/group-list", SimpleRequestXML(
+		"PageIndex", fmt.Sprintf("%d", page),
+		"ReadCount", fmt.Sprintf("%d", count),
+		"SortType", boolToString(sortByName),
+		"Ascending", boolToString(ascending),
+	))
+}
+
+// PhonebookCount retrieves count of phonebook entries per group.
+func (c *Client) PhonebookCount() (XMLData, error) {
+	return c.Do("api/pb/pb-count", nil)
+}
+
+// PhonebookImport imports SIM contacts into specified phonebook group.
+func (c *Client) PhonebookImport(group uint) (XMLData, error) {
+	return c.Do("api/pb/pb-copySIM", XMLData{
+		"GroupID": fmt.Sprintf("%d", group),
+	})
+}
+
+// PhonebookDelete deletes a specified phonebook entry.
+func (c *Client) PhonebookDelete(id uint) (bool, error) {
+	return c.doReqCheckOK("api/pb/delete-pb", SimpleRequestXML(
+		"Index", fmt.Sprintf("%d", id),
+	))
+}
+
+// PhonebookList retrieves list of phonebook entries from a specified group.
+func (c *Client) PhonebookList(group, page, count uint, sim, sortByName, ascending bool, keyword string) (XMLData, error) {
+	// execute request -- note: the order is important!
+	return c.Do("api/pb/pb-list", SimpleRequestXML(
+		"GroupID", fmt.Sprintf("%d", group),
+		"PageIndex", fmt.Sprintf("%d", page),
+		"ReadCount", fmt.Sprintf("%d", count),
+		"SaveType", boolToString(sim),
+		"SortType", boolToString(sortByName),
+		"Ascending", boolToString(ascending),
+		"KeyWord", keyword,
+	))
+}
+
+// PhonebookCreate creates a new phonebook entry.
+func (c *Client) PhonebookCreate(group uint, name, phone string, sim bool) (XMLData, error) {
+	return c.Do("api/pb/pb-new", SimpleRequestXML(
+		"GroupID", fmt.Sprintf("%d", group),
+		"SaveType", boolToString(sim),
+		"Field", xmlNvp("FormattedName", name),
+		"Field", xmlNvp("MobilePhone", phone),
+		"Field", xmlNvp("HomePhone", ""),
+		"Field", xmlNvp("WorkPhone", ""),
+		"Field", xmlNvp("WorkEmail", ""),
+	))
+}
+
+// FirewallFeatures retrieves firewall security feature information.
+func (c *Client) FirewallFeatures() (XMLData, error) {
+	return c.Do("api/security/firewall-switch", nil)
+}
+
+// TODO:
+// UserLogin/UserLogout/UserPasswordChange
+//
+// Voice/SIP functionality
+// WLAN management
+// firewall ("security") configuration
+// wifi profile management

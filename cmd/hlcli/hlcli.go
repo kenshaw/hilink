@@ -54,6 +54,11 @@ func findMethodNum(typ reflect.Type, methodName string) int {
 			continue
 		}
 
+		// skip "Do" command
+		if m.Name == "Do" {
+			continue
+		}
+
 		if strings.ToLower(methodName) == strings.ToLower(m.Name) {
 			methodNum = i
 			found = true
@@ -92,6 +97,11 @@ func doHelpMethodList() {
 			continue
 		}
 
+		// skip "Do" command
+		if m.Name == "Do" {
+			continue
+		}
+
 		comment := strings.TrimPrefix(methodCommentMap[m.Name], m.Name+" ")
 		comment = strings.TrimSuffix(comment, ".")
 		if comment != "" {
@@ -104,11 +114,12 @@ func doHelpMethodList() {
 
 func doHelpMethodParams(methodName string) {
 	typ := reflect.TypeOf(&hilink.Client{})
-
-	str := fmt.Sprintf("Params for %s: \n", methodName)
 	methodNum := findMethodNum(typ, methodName)
 	method := typ.Method(methodNum)
 	methodTyp := method.Func.Type()
+
+	str := fmt.Sprintf("Params for %s:\n", method.Name)
+	str += "  -v                  enable verbose\n  -endpoint=string    api endpoint\n"
 	for i := 1; i < methodTyp.NumIn(); i++ {
 		p := methodTyp.In(i)
 		lastVd := methodTyp.IsVariadic() && i == methodTyp.NumIn()-1

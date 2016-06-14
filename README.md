@@ -1,6 +1,7 @@
 # About hilink
 
-Package hilink is a Go package for working with Huawei Hilink devices (ie, modems).
+Package hilink is a Go package for working with Huawei Hilink devices (ie,
+3G/4G modems and WiFi access devices).
 
 # Installation
 
@@ -12,7 +13,29 @@ go get -u github.com/knq/hilink
 
 # Usage
 
-Please see the godoc for api usage.
+To use the Go API, please see the full API information on
+[GoDoc](http://godoc.org/github.com/knq/hilink).
+
+There is a convenient command line tool, [`hlcli`](cmd/hlcli) that makes
+working with the API extremely easy:
+
+```sh
+# install hlcli tool
+$ go get -u github.com/knq/hilink/hlcli
+
+# display available commands
+$ hlcli help
+
+# get help for a subcommand 'smslist'
+$ hlcli help smslist
+$ hlcli smslist --help
+
+# get network connection information from non-standard API endpoint
+$ hlcli networkinfo -endpoint http://192.168.245.1/
+
+# send ussd code with verbose output
+$ hlcli ussdcode -code -v
+```
 
 # Notes
 
@@ -42,6 +65,11 @@ $ go build ./cmd/hinfo/ && ./hinfo
 # TODO
 
 This API is currently incomplete, as I only have one type of Hilink device to
-test with and  because I have not attempted to do an exhaustive list of all API
+test with and because I have not attempted to do an exhaustive list of all API
 calls. That said, it should be fairly easy to write a new API call by following
-the existing API scheme. Pull requests are greatly appreciated, and encouraged!
+the existing code. Pull requests are greatly appreciated, and encouraged!
+
+## Hilink API Resources Available Online
+* [Huawei E5186 AJAX API](https://blog.hqcodeshop.fi/archives/259-Huawei-E5186-AJAX-API.html)
+* [hilink PHP implementation](https://github.com/BlackyPanther/Huawei-HiLink/blob/master/hilink.class.php)
+* [Modemy GSM forum](http://www.bez-kabli.pl/viewtopic.php?t=42168) (in Polish)

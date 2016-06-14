@@ -50,7 +50,13 @@ const (
 // XMLData is a map of XML data to encode/decode.
 type XMLData mxj.Map
 
+// xmlPairs combines xml name/value pairs as a properly formatted XML buffer.
 func xmlPairs(indent string, vals ...string) []byte {
+	// make sure we have pairs
+	if len(vals)%2 != 0 {
+		panic(fmt.Errorf("xmlPairs can only accept pairs of strings, length: %d", len(vals)))
+	}
+
 	var buf bytes.Buffer
 
 	// loop over pairs
@@ -59,6 +65,16 @@ func xmlPairs(indent string, vals ...string) []byte {
 	}
 
 	return buf.Bytes()
+}
+
+// xmlPairsString builds a string of XML pairs.
+func xmlPairsString(indent string, vals ...string) string {
+	return string(xmlPairs(indent, vals...))
+}
+
+// xmlNvp (ie, name value pair) builds a <Name>name</Name><Value>value</Value> XML pair.
+func xmlNvp(name, value string) string {
+	return xmlPairsString("", "Name", name, "Value", value)
 }
 
 // SimpleRequestXML creates an XML string from value pairs.
@@ -71,11 +87,6 @@ func xmlPairs(indent string, vals ...string) []byte {
 // On another note, XML sucks.
 func SimpleRequestXML(vals ...string) []byte {
 	var buf bytes.Buffer
-
-	// make sure we have pairs
-	if len(vals)%2 != 0 {
-		panic(fmt.Errorf("SimpleRequestXML can only accept pairs of strings, length: %d", len(vals)))
-	}
 
 	// write header
 	buf.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
