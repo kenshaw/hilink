@@ -21,7 +21,7 @@ working with the API extremely easy:
 
 ```sh
 # install hlcli tool
-$ go get -u github.com/knq/hilink/hlcli
+$ go get -u github.com/knq/hilink/cmd/hlcli
 
 # display available commands
 $ hlcli help
