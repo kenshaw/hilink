@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	fs := token.NewFileSet()
-	f, err := parser.ParseFile(fs, os.Getenv("GOPATH")+"/src/github.com/knq/hilink/client.go", nil, parser.ParseComments)
+	f, err := parser.ParseFile(fs, os.Getenv("GOPATH")+"/src/github.com/nerk/hilink/client.go", nil, parser.ParseComments)
 	if err != nil {
 		log.Fatal(err)
 	}
