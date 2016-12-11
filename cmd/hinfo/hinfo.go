@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/nerk/hilink"
+	"github.com/knq/hilink"
 )
 
 var (
