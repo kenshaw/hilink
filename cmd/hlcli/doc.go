@@ -88,6 +88,8 @@ var methodParamMap = map[string][]string{
 	"PhonebookList":        []string{"group", "page", "count", "sim", "sortByName", "ascending", "keyword"},
 	"PhonebookCreate":      []string{"group", "name", "phone", "sim"},
 	"FirewallFeatures":     []string{},
+	"DmzConfig":            []string{},
+	"DmzConfigSet":         []string{"dmzIPAddress", "enabled"},
 }
 
 var methodCommentMap = map[string]string{
@@ -176,4 +178,6 @@ var methodCommentMap = map[string]string{
 	"PhonebookList":        "PhonebookList retrieves list of phonebook entries from a specified group.",
 	"PhonebookCreate":      "PhonebookCreate creates a new phonebook entry.",
 	"FirewallFeatures":     "FirewallFeatures retrieves firewall security feature information.",
+	"DmzConfig":            "DmzConfig retries DMZ status and IP address of DMZ host.",
+	"DmzConfigSet":         "DmzConfigSet sets DMZ status and IP address of DMZ host.",
 }
