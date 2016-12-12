@@ -880,7 +880,7 @@ func (c *Client) FirewallFeatures() (XMLData, error) {
 	return c.Do("api/security/firewall-switch", nil)
 }
 
-// DmzConfig retries DMZ status and IP address of DMZ host.
+// DmzConfig retrieves DMZ status and IP address of DMZ host.
 func (c *Client) DmzConfig() (XMLData, error) {
 	return c.Do("api/security/dmz", nil)
 }
@@ -889,7 +889,7 @@ func (c *Client) DmzConfig() (XMLData, error) {
 func (c *Client) DmzConfigSet(dmzIPAddress string, enabled bool) (bool, error) {
 	return c.doReqCheckOK("api/security/dmz", SimpleRequestXML(
 		"DmzIPAddress", dmzIPAddress,
-    "DmzStatus", boolToString(enabled),
+		"DmzStatus", boolToString(enabled),
 	))
 }
 
