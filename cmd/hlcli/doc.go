@@ -178,6 +178,6 @@ var methodCommentMap = map[string]string{
 	"PhonebookList":        "PhonebookList retrieves list of phonebook entries from a specified group.",
 	"PhonebookCreate":      "PhonebookCreate creates a new phonebook entry.",
 	"FirewallFeatures":     "FirewallFeatures retrieves firewall security feature information.",
-	"DmzConfig":            "DmzConfig retries DMZ status and IP address of DMZ host.",
+	"DmzConfig":            "DmzConfig retrieves DMZ status and IP address of DMZ host.",
 	"DmzConfigSet":         "DmzConfigSet enables/disables DMZ and sets IP address of DMZ host.",
 }
