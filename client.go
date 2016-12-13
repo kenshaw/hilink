@@ -893,10 +893,46 @@ func (c *Client) DmzConfigSet(dmzIPAddress string, enabled bool) (bool, error) {
 	))
 }
 
+// SipAlg retrieves status and port of the SIP application-level gateway.
+func (c *Client) SipAlg() (XMLData, error) {
+	return c.Do("api/security/sip", nil)
+}
+
+// SipAlgSet enables/disables SIP application-level gateway and sets SIP port.
+func (c *Client) SipAlgSet(port uint, enabled bool) (bool, error) {
+	return c.doReqCheckOK("api/security/sip", SimpleRequestXML(
+		"SipPort", fmt.Sprintf("%d", port),
+		"SipStatus", boolToString(enabled),
+	))
+}
+
+// NatType retrieves NAT type.
+func (c *Client) NatType() (XMLData, error) {
+	return c.Do("api/security/nat", nil)
+}
+
+// NatTypeSet sets NAT type (values: 0, 1).
+func (c *Client) NatTypeSet(ntype uint) (bool, error) {
+	return c.doReqCheckOK("api/security/nat", SimpleRequestXML(
+		"NATType", fmt.Sprintf("%d", ntype),
+	))
+}
+
+// Upnp retrieves the status of UPNP.
+func (c *Client) Upnp() (XMLData, error) {
+	return c.Do("api/security/upnp", nil)
+}
+
+// UpnpSet enables/disables UPNP.
+func (c *Client) UpnpSet(enabled bool) (bool, error) {
+	return c.doReqCheckOK("api/security/upnp", SimpleRequestXML(
+		"UpnpStatus", boolToString(enabled),
+	))
+}
+
 // TODO:
 // UserLogin/UserLogout/UserPasswordChange
 //
-// Voice/SIP functionality
 // WLAN management
 // firewall ("security") configuration
 // wifi profile management
