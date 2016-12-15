@@ -90,6 +90,12 @@ var methodParamMap = map[string][]string{
 	"FirewallFeatures":     []string{},
 	"DmzConfig":            []string{},
 	"DmzConfigSet":         []string{"dmzIPAddress", "enabled"},
+	"SipAlg":               []string{},
+	"SipAlgSet":            []string{"port", "enabled"},
+	"NatType":              []string{},
+	"NatTypeSet":           []string{"ntype"},
+	"Upnp":                 []string{},
+	"UpnpSet":              []string{"enabled"},
 }
 
 var methodCommentMap = map[string]string{
@@ -180,4 +186,10 @@ var methodCommentMap = map[string]string{
 	"FirewallFeatures":     "FirewallFeatures retrieves firewall security feature information.",
 	"DmzConfig":            "DmzConfig retrieves DMZ status and IP address of DMZ host.",
 	"DmzConfigSet":         "DmzConfigSet enables/disables DMZ and sets IP address of DMZ host.",
+	"SipAlg":               "SipAlg retrieves status and port of the SIP application-level gateway.",
+	"SipAlgSet":            "SipAlgSet enables/disables SIP application-level gateway and sets SIP port.",
+	"NatType":              "NatType retrieves NAT type.",
+	"NatTypeSet":           "NatTypeSet sets NAT type (values: 0, 1).",
+	"Upnp":                 "Upnp retrieves the status of UPNP.",
+	"UpnpSet":              "UpnpSet enables/disables UPNP.",
 }
