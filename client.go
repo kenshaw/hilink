@@ -353,7 +353,7 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 	return s[len("SessionID="):], t, nil
 }
 
-// SetSessionAndTokenID sets the sessionID for the Client.
+// SetSessionAndTokenID sets the sessionID and tokenID for the Client.
 func (c *Client) SetSessionAndTokenID(sessionID, tokenID string) error {
 	c.Lock()
 	defer c.Unlock()
@@ -885,8 +885,9 @@ func (c *Client) DmzConfig() (XMLData, error) {
 	return c.Do("api/security/dmz", nil)
 }
 
-// DmzConfigSet enables/disables DMZ and sets IP address of DMZ host.
-func (c *Client) DmzConfigSet(dmzIPAddress string, enabled bool) (bool, error) {
+// DmzConfigSet enables or disables the DMZ and the DMZ IP address of the
+// device.
+func (c *Client) DmzConfigSet(enabled bool, dmzIPAddress string) (bool, error) {
 	return c.doReqCheckOK("api/security/dmz", SimpleRequestXML(
 		"DmzIPAddress", dmzIPAddress,
 		"DmzStatus", boolToString(enabled),
