@@ -686,6 +686,46 @@ func (c *Client) ProfileInfo() (XMLData, error) {
 	return c.Do("api/dialup/profiles", nil)
 }
 
+// ModeSet sets the network mode.
+func (c *Client) ProfileAdd(profileName, apnStatic, apnName, dialupNumber, username, password, authMode, ipType, asDefault string) (bool, error) {
+
+	var profile string;
+	profile = xmlPairsString("    ",
+			"Index", "",  //original is new_index
+			"IsValid", "1",
+			"Name", profileName,
+			"ApnIsStatic", apnStatic,
+			"ApnName", apnName,
+			"DialupNum", dialupNumber,
+			"Username", username,
+			"Password", password,
+			"AuthMode", authMode,
+			"IpIsStatic", "",
+			"IpAddress", "",
+			"DnsIsStatic", "",
+			"PrimaryDns", "",
+			"SecondaryDns", "",
+			"ReadOnly", "0",
+			"iptype", ipType,
+		);
+	return c.doReqCheckOK("api/dialup/profiles", SimpleRequestXML(
+		"Delete", "0",
+		"SetDefault", asDefault, //boolToString(asDefault),
+		"Modify", "1",
+		"Profile", fmt.Sprintf("\n%s", profile),
+	));
+}
+
+// ModeSet sets the network mode.
+func (c *Client) ProfileDel(profileIndex, defaultIndex string) (bool, error) {
+
+	return c.doReqCheckOK("api/dialup/profiles", SimpleRequestXML(
+		"Delete", profileIndex,
+		"SetDefault", defaultIndex,
+		"Modify", "0",
+	));
+}
+
 // SmsFeatures retrieves SMS feature information.
 func (c *Client) SmsFeatures() (XMLData, error) {
 	return c.Do("api/sms/sms-feature-switch", nil)

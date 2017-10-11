@@ -12,7 +12,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/knq/hilink"
+	"../../../hilink"
 )
 
 func doExit(msg string, args ...interface{}) {
