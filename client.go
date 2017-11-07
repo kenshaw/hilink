@@ -529,6 +529,18 @@ func (c *Client) ConnectionInfo() (XMLData, error) {
 	return c.Do("api/dialup/connection", nil)
 }
 
+// ConnectionSet sets connection (dialup) information.
+func (c *Client) ConnectionSet(roamAutoConnectEnable, maxIdelTime, connectMode, mtu, autodialswitch, pdpalways, asDefault string) (bool, error) {
+	return c.doReqCheckOK("api/dialup/connection", SimpleRequestXML(
+		"RoamAutoConnectEnable", roamAutoConnectEnable,
+		"MaxIdelTime", maxIdelTime,
+		"ConnectMode", connectMode,
+		"MTU", mtu,
+		"auto_dial_switch", autodialswitch,
+		"pdp_always_on", pdpalways,
+	))
+}
+
 // GlobalFeatures retrieves global feature information.
 func (c *Client) GlobalFeatures() (XMLData, error) {
 	return c.Do("api/global/module-switch", nil)
@@ -689,31 +701,31 @@ func (c *Client) ProfileInfo() (XMLData, error) {
 // ModeSet sets the network mode.
 func (c *Client) ProfileAdd(profileName, apnStatic, apnName, dialupNumber, username, password, authMode, ipType, asDefault string) (bool, error) {
 
-	var profile string;
+	var profile string
 	profile = xmlPairsString("    ",
-			"Index", "",  //original is new_index
-			"IsValid", "1",
-			"Name", profileName,
-			"ApnIsStatic", apnStatic,
-			"ApnName", apnName,
-			"DialupNum", dialupNumber,
-			"Username", username,
-			"Password", password,
-			"AuthMode", authMode,
-			"IpIsStatic", "",
-			"IpAddress", "",
-			"DnsIsStatic", "",
-			"PrimaryDns", "",
-			"SecondaryDns", "",
-			"ReadOnly", "0",
-			"iptype", ipType,
-		);
+		"Index", "", //original is new_index
+		"IsValid", "1",
+		"Name", profileName,
+		"ApnIsStatic", apnStatic,
+		"ApnName", apnName,
+		"DialupNum", dialupNumber,
+		"Username", username,
+		"Password", password,
+		"AuthMode", authMode,
+		"IpIsStatic", "",
+		"IpAddress", "",
+		"DnsIsStatic", "",
+		"PrimaryDns", "",
+		"SecondaryDns", "",
+		"ReadOnly", "0",
+		"iptype", ipType,
+	)
 	return c.doReqCheckOK("api/dialup/profiles", SimpleRequestXML(
 		"Delete", "0",
 		"SetDefault", asDefault, //boolToString(asDefault),
 		"Modify", "1",
 		"Profile", fmt.Sprintf("\n%s", profile),
-	));
+	))
 }
 
 // ModeSet sets the network mode.
@@ -723,7 +735,7 @@ func (c *Client) ProfileDel(profileIndex, defaultIndex string) (bool, error) {
 		"Delete", profileIndex,
 		"SetDefault", defaultIndex,
 		"Modify", "0",
-	));
+	))
 }
 
 // SmsFeatures retrieves SMS feature information.
