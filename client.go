@@ -529,7 +529,7 @@ func (c *Client) ConnectionInfo() (XMLData, error) {
 	return c.Do("api/dialup/connection", nil)
 }
 
-// ConnectionSet sets the connectionInfo you receive from ConnectionInfo function
+// ConnectionSet sets connection (dialup) information.
 func (c *Client) ConnectionSet(roamAutoConnectEnable, maxIdelTime, connectMode, mtu, autodialswitch, pdpalways, asDefault string) (bool, error) {
 	return c.doReqCheckOK("api/dialup/connection", SimpleRequestXML(
 		"RoamAutoConnectEnable", roamAutoConnectEnable,
