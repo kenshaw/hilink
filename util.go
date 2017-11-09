@@ -9,18 +9,32 @@ import (
 )
 
 var (
-	ErrBadStatusCode      = errors.New("bad status code")
-	ErrInvalidResponse    = errors.New("invalid response")
-	ErrInvalidError       = errors.New("invalid error")
-	ErrInvalidValue       = errors.New("invalid value")
-	ErrInvalidXML         = errors.New("invalid xml")
+	// ErrBadStatusCode is the bad status code error.
+	ErrBadStatusCode = errors.New("bad status code")
+
+	// ErrInvalidResponse is the invalid response error.
+	ErrInvalidResponse = errors.New("invalid response")
+
+	// ErrInvalidError is the invalid error error.
+	ErrInvalidError = errors.New("invalid error")
+
+	// ErrInvalidValue is the invalid value error.
+	ErrInvalidValue = errors.New("invalid value")
+
+	// ErrInvalidXML is the invalid xml error.
+	ErrInvalidXML = errors.New("invalid xml")
+
+	// ErrMissingRootElement is the missing root element error.
 	ErrMissingRootElement = errors.New("missing root element")
-	ErrMessageTooLong     = errors.New("message too long")
+
+	// ErrMessageTooLong is the message too long error.
+	ErrMessageTooLong = errors.New("message too long")
 )
 
 // SmsBoxType represents the different inbox types available on a hilink device.
 type SmsBoxType uint
 
+// SmsBoxType values.
 const (
 	SmsBoxTypeInbox SmsBoxType = iota + 1
 	SmsBoxTypeOutbox
@@ -30,6 +44,7 @@ const (
 // PinType are the PIN types for a PIN command.
 type PinType int
 
+// PinType values.
 const (
 	PinTypeEnter PinType = iota
 	PinTypeActivate
@@ -41,6 +56,7 @@ const (
 // UssdState represents the different USSD states.
 type UssdState int
 
+// UssdState values.
 const (
 	UssdStateNone UssdState = iota
 	UssdStateActive

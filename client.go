@@ -65,7 +65,10 @@ func NewClient(opts ...Option) (*Client, error) {
 
 	// set default url
 	if c.rawurl == "" || c.url == nil {
-		URL(DefaultURL)(c)
+		err = URL(DefaultURL)(c)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// start session
@@ -133,7 +136,7 @@ func (c *Client) decodeXML(buf []byte, takeFirstEl bool) (interface{}, error) {
 		msg, _ := z["message"].(string)
 		if msg == "" {
 			c, _ := z["code"].(string)
-			msg, _ = ErrorCodeMessageMap[c]
+			msg = ErrorCodeMessageMap[c]
 		}
 
 		return nil, fmt.Errorf("hilink error %v: %s", z["code"], msg)

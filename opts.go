@@ -10,8 +10,6 @@ import (
 // Option is an option used when creating a new Client.
 type Option func(*Client) error
 
-type Logf func(string, ...interface{})
-
 // URL is an option that handles setting the URL on the Client.
 func URL(rawurl string) Option {
 	return func(c *Client) error {
@@ -47,7 +45,7 @@ func NoSessionStart(c *Client) error {
 // httpLogger handles logging http requests and responses.
 type httpLogger struct {
 	transport                 http.RoundTripper
-	requestLogf, responseLogf Logf
+	requestLogf, responseLogf func(string, ...interface{})
 }
 
 func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -68,7 +66,7 @@ func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // Log is an option that writes all HTTP request and response data to the
 // respective logger.
-func Log(requestLogf, responseLogf Logf) Option {
+func Log(requestLogf, responseLogf func(string, ...interface{})) Option {
 	return func(c *Client) error {
 		hl := &httpLogger{
 			requestLogf:  requestLogf,
