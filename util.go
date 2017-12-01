@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/clbanning/mxj"
 )
@@ -159,4 +160,86 @@ var ErrorCodeMessageMap = map[string]string{
 	"117004": "incorrect WISPr password",
 	"120001": "voice busy",
 	"125001": "invalid token",
+}
+
+// encodeXML encodes a map to standard XML values.
+func encodeXML(v interface{}) (io.Reader, error) {
+	var err error
+	var buf []byte
+
+	switch x := v.(type) {
+	case []byte:
+		buf = x
+
+	case XMLData:
+		// wrap in request element
+		m := mxj.Map(map[string]interface{}{
+			"request": map[string]interface{}(x),
+		})
+
+		// encode xml
+		buf, err = m.XmlIndent("", "  ")
+		if err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil, errors.New("unsupported type in encodeXML")
+	}
+
+	return bytes.NewReader(buf), nil
+}
+
+// decodeXML decodes buf into its simple xml values.
+func decodeXML(buf []byte, takeFirstEl bool) (interface{}, error) {
+	// decode xml
+	m, err := mxj.NewMapXml(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if error was returned
+	if e, ok := m["error"]; ok {
+		z, ok := e.(map[string]interface{})
+		if !ok {
+			return nil, ErrInvalidError
+		}
+
+		// grab message if not passed by the api
+		msg, _ := z["message"].(string)
+		if msg == "" {
+			c, _ := z["code"].(string)
+			msg = ErrorCodeMessageMap[c]
+		}
+
+		return nil, fmt.Errorf("hilink error %v: %s", z["code"], msg)
+	}
+
+	// check there is only one element
+	if len(m) != 1 {
+		return nil, ErrMissingRootElement
+	}
+
+	// bail if not grabbing the first XML element
+	if !takeFirstEl {
+		return m, nil
+	}
+
+	// grab root element
+	rootEl := ""
+	for k := range m {
+		rootEl = k
+	}
+	r, ok := m[rootEl]
+	if !ok {
+		return nil, ErrInvalidResponse
+	}
+
+	// convert
+	t, ok := r.(map[string]interface{})
+	if !ok {
+		return nil, ErrInvalidXML
+	}
+
+	return t, nil
 }

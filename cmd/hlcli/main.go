@@ -39,7 +39,6 @@ func (m methodList) Less(i, j int) bool { return strings.Compare(m[i].Name, m[j]
 
 var (
 	errorInterface = reflect.TypeOf((*error)(nil)).Elem()
-	//textUnmarshalerInterface = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 )
 
 func findMethodNum(typ reflect.Type, methodName string) int {
@@ -51,11 +50,6 @@ func findMethodNum(typ reflect.Type, methodName string) int {
 
 		// skip if results != 2 or if last result is not error
 		if m.Type.NumOut() != 2 || !m.Type.Out(1).Implements(errorInterface) {
-			continue
-		}
-
-		// skip "Do" command
-		if m.Name == "Do" {
 			continue
 		}
 
@@ -84,11 +78,13 @@ func doHelpMethodList() {
 		maxNameLength = max(maxNameLength, len(m.Name))
 		methods = append(methods, m)
 	}
-
-	// sort methods
 	sort.Sort(methods)
 
-	str := "usage: " + os.Args[0] + " <method> [<params>]\n\nThe following are the list of available methods:\n\n"
+	fmt.Fprintln(os.Stdout, `usage: `+os.Args[0]+` <method> [<params>]
+
+Where <method> is one of the following:
+`)
+
 	for i := 0; i < len(methods); i++ {
 		m := methods[i]
 
@@ -97,19 +93,20 @@ func doHelpMethodList() {
 			continue
 		}
 
-		// skip "Do" command
-		if m.Name == "Do" {
-			continue
-		}
-
 		comment := strings.TrimPrefix(methodCommentMap[m.Name], m.Name+" ")
 		comment = strings.TrimSuffix(comment, ".")
 		if comment != "" {
-			str += "  " + m.Name + strings.Repeat(" ", maxNameLength-len(m.Name)+2) + comment + "\n"
+			fmt.Fprintln(os.Stdout, "  "+m.Name+strings.Repeat(" ", maxNameLength-len(m.Name)+2)+comment)
 		}
 	}
 
-	fmt.Fprintf(os.Stdout, str)
+	fmt.Fprintln(os.Stdout, ` 
+Note that method names are case-insensitive.
+
+For help regarding the available parameters for a method:
+
+	`+os.Args[0]+` help <method>
+`)
 }
 
 func doHelpMethodParams(methodName string) {
@@ -118,7 +115,7 @@ func doHelpMethodParams(methodName string) {
 	method := typ.Method(methodNum)
 	methodTyp := method.Func.Type()
 
-	str := fmt.Sprintf("Params for %s:\n", method.Name)
+	str := fmt.Sprintf("Parameters for %s:\n", method.Name)
 	str += "  -v                  enable verbose\n  -endpoint=string    api endpoint\n"
 	for i := 1; i < methodTyp.NumIn(); i++ {
 		p := methodTyp.In(i)

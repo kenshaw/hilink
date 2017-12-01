@@ -1,10 +1,9 @@
+// Package hilink provides a Hilink WebUI client.
 package hilink
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -89,96 +88,14 @@ func NewClient(opts ...Option) (*Client, error) {
 	return c, nil
 }
 
-// encodeXML encodes a map to standard XML values.
-func (c *Client) encodeXML(v interface{}) (io.Reader, error) {
-	var err error
-	var buf []byte
-
-	switch x := v.(type) {
-	case []byte:
-		buf = x
-
-	case XMLData:
-		// wrap in request element
-		m := mxj.Map(map[string]interface{}{
-			"request": map[string]interface{}(x),
-		})
-
-		// encode xml
-		buf, err = m.XmlIndent("", "  ")
-		if err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, errors.New("unsupported type in encodeXML")
-	}
-
-	return bytes.NewReader(buf), nil
-}
-
-// decodeXML decodes buf into its simple xml values.
-func (c *Client) decodeXML(buf []byte, takeFirstEl bool) (interface{}, error) {
-	// decode xml
-	m, err := mxj.NewMapXml(buf)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if error was returned
-	if e, ok := m["error"]; ok {
-		z, ok := e.(map[string]interface{})
-		if !ok {
-			return nil, ErrInvalidError
-		}
-
-		// grab message if not passed by the api
-		msg, _ := z["message"].(string)
-		if msg == "" {
-			c, _ := z["code"].(string)
-			msg = ErrorCodeMessageMap[c]
-		}
-
-		return nil, fmt.Errorf("hilink error %v: %s", z["code"], msg)
-	}
-
-	// check there is only one element
-	if len(m) != 1 {
-		return nil, ErrMissingRootElement
-	}
-
-	// bail if not grabbing the first XML element
-	if !takeFirstEl {
-		return m, nil
-	}
-
-	// grab root element
-	rootEl := ""
-	for k := range m {
-		rootEl = k
-	}
-	r, ok := m[rootEl]
-	if !ok {
-		return nil, ErrInvalidResponse
-	}
-
-	// convert
-	t, ok := r.(map[string]interface{})
-	if !ok {
-		return nil, ErrInvalidXML
-	}
-
-	return t, nil
-}
-
-// buildRequest creates a request for use with the Client.
-func (c *Client) buildRequest(urlstr string, v interface{}) (*http.Request, error) {
+// createRequest creates a request for use with the Client.
+func (c *Client) createRequest(urlstr string, v interface{}) (*http.Request, error) {
 	if v == nil {
 		return http.NewRequest("GET", urlstr, nil)
 	}
 
 	// encode xml
-	body, err := c.encodeXML(v)
+	body, err := encodeXML(v)
 	if err != nil {
 		return nil, err
 	}
@@ -204,8 +121,8 @@ func (c *Client) doReq(path string, v interface{}, takeFirstEl bool) (interface{
 
 	var err error
 
-	// build http request
-	q, err := c.buildRequest(c.rawurl+path, v)
+	// create http request
+	q, err := c.createRequest(c.rawurl+path, v)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +152,7 @@ func (c *Client) doReq(path string, v interface{}, takeFirstEl bool) (interface{
 	}
 
 	// decode
-	m, err := c.decodeXML(body, takeFirstEl)
+	m, err := decodeXML(body, takeFirstEl)
 	if err != nil {
 		return nil, err
 	}
