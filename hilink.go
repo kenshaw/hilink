@@ -262,7 +262,7 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 
 	// convert to strings
 	s, ok := sesInfo.(string)
-	if !ok || !strings.HasPrefix(s, "SessionID=") {
+	if !ok {
 		return "", "", ErrInvalidResponse
 	}
 	t, ok := tokInfo.(string)
@@ -270,7 +270,10 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 		return "", "", ErrInvalidResponse
 	}
 
-	return s[len("SessionID="):], t, nil
+	if strings.HasPrefix(s, "SessionID=") {
+		s = s[len("SessionID="):]
+	}
+	return s, t, nil
 }
 
 // SetSessionAndTokenID sets the sessionID and tokenID for the Client.
