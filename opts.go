@@ -54,12 +54,21 @@ func (hl *httpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		trans = http.DefaultTransport
 	}
 
-	reqBody, _ := httputil.DumpRequestOut(req, true)
+	reqBody, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		return nil, err
+	}
 	res, err := trans.RoundTrip(req)
-	resBody, _ := httputil.DumpResponse(res, true)
+	if err != nil {
+		return nil, err
+	}
+	resBody, err := httputil.DumpResponse(res, true)
+	if err != nil {
+		return nil, err
+	}
 
-	hl.requestLogf("%s", reqBody)
-	hl.responseLogf("%s", resBody)
+	hl.requestLogf("%s", string(reqBody))
+	hl.responseLogf("%s", string(resBody))
 
 	return res, err
 }
