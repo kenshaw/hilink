@@ -132,7 +132,7 @@ func boolToString(b bool) string {
 var ErrorCodeMessageMap = map[string]string{
 	"-1":     "system not available",
 	"100002": "not supported by firmware or incorrect API path",
-	"100003": "no power",
+	"100003": "access denied",
 	"100004": "system busy",
 	"100005": "unknown error",
 	"100006": "invalid parameter",
