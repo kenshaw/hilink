@@ -2,6 +2,9 @@
 package hilink
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -35,6 +38,8 @@ const (
 type Client struct {
 	rawurl    string
 	url       *url.URL
+	authID    string
+	authPW    string
 	nostart   bool
 	client    *http.Client
 	token     string
@@ -80,6 +85,12 @@ func NewClient(opts ...Option) (*Client, error) {
 
 		// set session id
 		err = c.SetSessionAndTokenID(sessID, tokID)
+		if err != nil {
+			return nil, err
+		}
+
+		// try login, ignore the OK value
+		_, err = c.login()
 		if err != nil {
 			return nil, err
 		}
@@ -216,6 +227,23 @@ func (c *Client) doReqCheckOK(path string, v interface{}) (bool, error) {
 	}
 
 	return s == "OK", nil
+}
+
+// login authentifies the user using the user identifier and password given
+// with the Auth option. Return nil if succeeded, or no Auth option
+// was given, or the identifier is an empty string.
+func (c *Client) login() (bool, error) {
+	if c.authID == "" {
+		return false, nil
+	}
+	// encode hashed password
+	h := sha256.Sum256([]byte(c.authPW + c.token))
+	tokenizedPW := base64.RawStdEncoding.EncodeToString([]byte(hex.EncodeToString(h[:])))
+	return c.doReqCheckOK("api/user/login", XMLData{
+		"Username":      c.authID,
+		"Password":      tokenizedPW,
+		"password_type": 4,
+	})
 }
 
 // Do sends a request to the server with the provided path. If data is nil,
