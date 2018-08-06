@@ -298,10 +298,7 @@ func (c *Client) NewSessionAndTokenID() (string, string, error) {
 		return "", "", ErrInvalidResponse
 	}
 
-	if strings.HasPrefix(s, "SessionID=") {
-		s = s[len("SessionID="):]
-	}
-	return s, t, nil
+	return strings.TrimPrefix(s, "SessionID="), t, nil
 }
 
 // SetSessionAndTokenID sets the sessionID and tokenID for the Client.
