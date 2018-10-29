@@ -67,16 +67,6 @@ func WifiDefaultConfig() map[string]string {
 	}
 }
 
-// FirewallDefaultConfig returns the default configuration of the firewall.
-func FirewallDefaultConfig() map[string]string {
-	return map[string]string{
-		"FirewallMainSwitch":        "1",
-		"FirewallIPFilterSwitch":    "0",
-		"FirewallWanPortPingSwitch": "0",
-		"firewallurlfilterswitch":   "0",
-	}
-}
-
 // Client represents a Hilink client connection.
 type Client struct {
 	rawurl    string
@@ -1044,9 +1034,12 @@ func (c *Client) UpnpSet(enabled bool) (bool, error) {
 
 // IcmpSet enables/disables ICMP.
 func (c *Client) IcmpSet(enabled bool) (bool, error) {
-	firewallConfig := FirewallDefaultConfig()
-	firewallConfig["FirewallWanPortPingSwitch"] = boolToString(enabled)
-	return c.doReqCheckOK("api/security/firewall-switch", xmlMapString("", firewallConfig))
+	return c.doReqCheckOK("api/security/firewall-switch", SimpleRequestXML(
+		"FirewallMainSwitch", "1",
+		"FirewallIPFilterSwitch", "0",
+		"FirewallWanPortPingSwitch", boolToString(enabled),
+		"firewallurlfilterswitch", "0",
+	))
 }
 
 // TODO:
