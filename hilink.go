@@ -1049,6 +1049,11 @@ func (c *Client) LoginSet(enabled bool) (bool, error) {
 	))
 }
 
+// LoginStatusInfo retrieves the status of user authentication.
+func (c *Client) LoginStatusInfo() (XMLData, error) {
+	return c.Do("api/user/hilink_login", nil)
+}
+
 // TODO:
 // UserLogout
 //
