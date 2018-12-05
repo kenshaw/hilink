@@ -2,9 +2,7 @@
 package hilink
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -32,7 +30,42 @@ const (
 
 	// TokenHeader is the header used by the WebUI for CSRF tokens.
 	TokenHeader = "__RequestVerificationToken"
+
+	// TokenHeaderLogin is the header used by the api for session tokens.
+	TokenHeaderLogin = TokenHeader + "one"
 )
+
+// WifiDefaultConfig returns the default configuration of the wireless interface.
+func WifiDefaultConfig() map[string]string {
+	return map[string]string{
+		"Index":                    "0",
+		"WifiEnable":               "0",
+		"WifiSsid":                 "",
+		"WifiMac":                  "",
+		"WifiBroadcast":            "0",
+		"WifiIsolate":              "0",
+		"WifiAuthmode":             "WPA2-PSK",
+		"WifiBasicencryptionmodes": "WEP",
+		"WifiWpaencryptionmodes":   "AES",
+		"WifiWepKey1":              "",
+		"WifiWepKey2":              "",
+		"WifiWepKey3":              "",
+		"WifiWepKey4":              "",
+		"WifiWep128Key1":           "",
+		"WifiWep128Key2":           "",
+		"WifiWep128Key3":           "",
+		"WifiWep128Key4":           "",
+		"WifiWepKeyIndex":          "1",
+		"WifiWpapsk":               "73634297",
+		"MixWifiWpapsk":            "73634297",
+		"WifiWpsenbl":              "1",
+		"WifiWpscfg":               "0",
+		"WifiRotationInterval":     "60",
+		"WifiAssociatedStationNum": "0",
+		"wifitotalswitch":          "1",
+		"wifiguestofftime":         "0",
+	}
+}
 
 // Client represents a Hilink client connection.
 type Client struct {
@@ -46,6 +79,13 @@ type Client struct {
 	transport http.RoundTripper
 
 	sync.Mutex
+}
+
+// LoginResponse represents the response message of the login
+// endpoint. Contains the session data.
+type loginResponse struct {
+	tokenID   string
+	sessionID string
 }
 
 // NewClient creates a new client a Hilink device.
@@ -119,7 +159,7 @@ func (c *Client) createRequest(urlstr string, v interface{}) (*http.Request, err
 
 	// set content type and CSRF token
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set(TokenHeader, c.token)
+	req.Header[TokenHeader] = []string{c.token}
 
 	return req, nil
 }
@@ -229,6 +269,83 @@ func (c *Client) doReqCheckOK(path string, v interface{}) (bool, error) {
 	return s == "OK", nil
 }
 
+// doReqLogin sends a request to the server with the provided path. If data is nil,
+// then GET will be used as the HTTP method, otherwise POST will be used. Takes
+// the token number one and the new session id and replaces the current ones.
+func (c *Client) doReqLogin(path string, v interface{}) (*loginResponse, error) {
+	c.Lock()
+	defer c.Unlock()
+
+	var err error
+
+	// create http request
+	q, err := c.createRequest(c.rawurl+path, v)
+	if err != nil {
+		return nil, err
+	}
+
+	// do request
+	r, err := c.client.Do(q)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	// check status code
+	if r.StatusCode != http.StatusOK {
+		return nil, ErrBadStatusCode
+	}
+
+	// read body
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// decode
+	res, err := decodeXML(body, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// expect mxj.Map
+	m, ok := res.(mxj.Map)
+	if !ok {
+		return nil, ErrInvalidResponse
+	}
+
+	// check response present
+	o := map[string]interface{}(m)
+	resp, ok := o["response"]
+	if !ok {
+		return nil, ErrInvalidResponse
+	}
+
+	// convert
+	s, ok := resp.(string)
+	if !ok {
+		return nil, ErrInvalidValue
+	}
+
+	if s != "OK" {
+		return nil, ErrInvalidResponse
+	}
+
+	// retrieve and save new cookie and token
+	var out loginResponse
+
+	// saving token
+	out.tokenID = r.Header.Get(TokenHeaderLogin)
+
+	// saving cookie
+	setcookie := r.Header.Get("Set-Cookie")
+	cookie := strings.Split(setcookie, ";")[0]
+	sessID := strings.TrimPrefix(cookie, "SessionID=")
+	out.sessionID = sessID
+
+	return &out, nil
+}
+
 // login authentifies the user using the user identifier and password given
 // with the Auth option. Return nil if succeeded, or no Auth option
 // was given, or the identifier is an empty string.
@@ -236,14 +353,21 @@ func (c *Client) login() (bool, error) {
 	if c.authID == "" {
 		return false, nil
 	}
-	// encode hashed password
-	h := sha256.Sum256([]byte(c.authPW + c.token))
-	tokenizedPW := base64.RawStdEncoding.EncodeToString([]byte(hex.EncodeToString(h[:])))
-	return c.doReqCheckOK("api/user/login", XMLData{
-		"Username":      c.authID,
-		"Password":      tokenizedPW,
-		"password_type": 4,
-	})
+	tokenizedPW := hashPw(c.authID + hashPw(c.authPW) + c.token)
+	resp, err := c.doReqLogin("api/user/login", SimpleRequestXML(
+		"Username", c.authID,
+		"Password", tokenizedPW,
+		"password_type", "4",
+	))
+	if err != nil {
+		return false, err
+	}
+
+	if err = c.SetSessionAndTokenID(resp.sessionID, resp.tokenID); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // Do sends a request to the server with the provided path. If data is nil,
@@ -324,6 +448,18 @@ func (c *Client) SetSessionAndTokenID(sessionID, tokenID string) error {
 	return nil
 }
 
+// ChangePassword changes the current user password
+func (c *Client) ChangePassword(newPassword string) (bool, error) {
+	oldPasswordHash := hashPw(c.authID + hashPw(c.authPW) + c.token)
+	newPasswordHash := base64.StdEncoding.EncodeToString([]byte(newPassword))
+	return c.doReqCheckOK("api/user/password", SimpleRequestXML(
+		"Username", c.authID,
+		"CurrentPassword", oldPasswordHash,
+		"NewPassword", newPasswordHash,
+		"encryption_enable", "1",
+	))
+}
+
 // GlobalConfig retrieves global Hilink configuration.
 func (c *Client) GlobalConfig() (XMLData, error) {
 	return c.Do("config/global/config.xml", nil)
@@ -357,6 +493,23 @@ func (c *Client) SmsConfig() (XMLData, error) {
 // WlanConfig retrieves basic WLAN settings.
 func (c *Client) WlanConfig() (XMLData, error) {
 	return c.Do("api/wlan/basic-settings", nil)
+}
+
+// WlanDisable disables the WLAN interface that matches the given ssid.
+func (c *Client) WlanDisable(ssid string, config map[string]string) (bool, error) {
+	// WifiSsid has to be set up before modifying settings
+	var wifiConfig map[string]string
+	if config == nil {
+		wifiConfig = WifiDefaultConfig()
+	} else {
+		wifiConfig = config
+	}
+	wifiConfig["WifiSsid"] = ssid
+
+	return c.doReqCheckOK("api/wlan/multi-basic-settings", SimpleRequestXML(
+		"Ssids", xmlPairsString("", "Ssid", xmlMapString("", wifiConfig)),
+		"WifiRestart", "1",
+	))
 }
 
 // DhcpConfig retrieves DHCP configuration.
@@ -879,8 +1032,25 @@ func (c *Client) UpnpSet(enabled bool) (bool, error) {
 	))
 }
 
+// IcmpSet enables/disables ICMP.
+func (c *Client) IcmpSet(enabled bool) (bool, error) {
+	return c.doReqCheckOK("api/security/firewall-switch", SimpleRequestXML(
+		"FirewallMainSwitch", "1",
+		"FirewallIPFilterSwitch", "0",
+		"FirewallWanPortPingSwitch", boolToString(enabled),
+		"firewallurlfilterswitch", "0",
+	))
+}
+
+// LoginSet enables/disables user authentication.
+func (c *Client) LoginSet(enabled bool) (bool, error) {
+	return c.doReqCheckOK("api/user/hilink_login", SimpleRequestXML(
+		"hilink_login", boolToString(enabled),
+	))
+}
+
 // TODO:
-// UserLogin/UserLogout/UserPasswordChange
+// UserLogout
 //
 // WLAN management
 // firewall ("security") configuration
