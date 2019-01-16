@@ -27,6 +27,9 @@ const (
 	// DefaultURL is the default URL endpoint for the Hilink WebUI.
 	DefaultURL = "http://192.168.8.1/"
 
+	// Default host header
+	DefaultHost = "192.168.8.1"
+
 	// DefaultTimeout is the default timeout.
 	DefaultTimeout = 30 * time.Second
 
@@ -36,6 +39,7 @@ const (
 
 // Client represents a Hilink client connection.
 type Client struct {
+	rawhost   string
 	rawurl    string
 	url       *url.URL
 	authID    string
@@ -74,6 +78,13 @@ func NewClient(opts ...Option) (*Client, error) {
 			return nil, err
 		}
 	}
+	// set default host
+	if c.rawhost == "" {
+		err = Host(DefaultHost)(c)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// start session
 	if !c.nostart {
@@ -102,7 +113,12 @@ func NewClient(opts ...Option) (*Client, error) {
 // createRequest creates a request for use with the Client.
 func (c *Client) createRequest(urlstr string, v interface{}) (*http.Request, error) {
 	if v == nil {
-		return http.NewRequest("GET", urlstr, nil)
+		req, err := http.NewRequest("GET", urlstr, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Host = c.rawhost
+		return req, nil
 	}
 
 	// encode xml
@@ -120,6 +136,7 @@ func (c *Client) createRequest(urlstr string, v interface{}) (*http.Request, err
 	// set content type and CSRF token
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 	req.Header.Set(TokenHeader, c.token)
+	req.Host = c.rawhost
 
 	return req, nil
 }
