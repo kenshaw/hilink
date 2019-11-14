@@ -29,14 +29,20 @@ func URL(rawurl string) Option {
 	}
 }
 
+func hashPw(text string) string {
+	h := sha256.New()
+	h.Write([]byte(text))
+	hash := hex.EncodeToString(h.Sum(nil))
+	return base64.StdEncoding.EncodeToString([]byte(hash))
+}
+
 // Auth is an option specifying the identifier and password to use.
 // The option is ignored if id is an empty string.
 func Auth(id, pw string) Option {
 	return func(c *Client) error {
 		if id != "" {
 			c.authID = id
-			h := sha256.Sum256([]byte(pw))
-			c.authPW = id + base64.StdEncoding.EncodeToString([]byte(hex.EncodeToString(h[:])))
+			c.authPW = pw
 		}
 		return nil
 	}

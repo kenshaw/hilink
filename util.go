@@ -89,6 +89,16 @@ func xmlPairsString(indent string, vals ...string) string {
 	return string(xmlPairs(indent, vals...))
 }
 
+// xmlMapString builds a string of XML string map.
+func xmlMapString(indent string, vals map[string]string) string {
+	pairs := make([]string, 0)
+	for k, v := range vals {
+		pairs = append(pairs, k)
+		pairs = append(pairs, v)
+	}
+	return string(xmlPairs(indent, pairs...))
+}
+
 // xmlNvp (ie, name value pair) builds a <Name>name</Name><Value>value</Value> XML pair.
 func xmlNvp(name, value string) string {
 	return xmlPairsString("", "Name", name, "Value", value)
