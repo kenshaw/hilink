@@ -29,6 +29,16 @@ func URL(rawurl string) Option {
 	}
 }
 
+// Set Host header to each request to prevent redirect to 192.168.8.1
+// when modem url different from default
+func Host(rawhost string) Option {
+	return func(c *Client) error {
+		c.rawhost = rawhost
+
+		return nil
+	}
+}
+
 // Auth is an option specifying the identifier and password to use.
 // The option is ignored if id is an empty string.
 func Auth(id, pw string) Option {
