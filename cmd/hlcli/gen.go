@@ -5,55 +5,58 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-var (
-	flagOut = flag.String("o", "doc.go", "out file")
-	flagPkg = flag.String("pkg", os.Getenv("GOPATH")+"/src/github.com/knq/hilink", "go package")
-)
-
 func main() {
+	out := flag.String("o", "doc.go", "out file")
+	pkg := flag.String("pkg", "github.com/kenshaw/hilink", "go package")
 	flag.Parse()
-
-	fs := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fs, *flagPkg, nil, parser.ParseComments)
-	if err != nil {
+	if err := run(*out, *pkg); err != nil {
 		log.Fatal(err)
 	}
+}
 
-	if len(pkgs) != 1 {
-		log.Fatalf("invalid package count in %s", *flagPkg)
+func run(out, pkg string) error {
+	fs := token.NewFileSet()
+	pkgs, err := parser.ParseDir(fs, filepath.Join(os.Getenv("GOPATH"), "src", pkg), nil, parser.ParseComments)
+	if err != nil {
+		return err
 	}
+	if len(pkgs) != 1 {
+		return fmt.Errorf("invalid package count in %s", pkg)
+	}
+	// silly loop because it pkgs is a map ...
 	var pkgName string
 	for pkgName = range pkgs {
 	}
 	if pkgName != "hilink" {
-		log.Fatalf("invalid package name %s", pkgName)
+		return fmt.Errorf("invalid package name %s", pkgName)
 	}
-
 	buf := new(bytes.Buffer)
 	buf.WriteString(hdr)
-
 	buf.WriteString("var methodParamMap = map[string][]string{\n")
-
 	for _, f := range pkgs[pkgName].Files {
 		for _, d := range f.Decls {
 			fd, typ, ok := getRecvType(d)
 			if !ok || typ != "Client" || !fd.Name.IsExported() || fd.Name.Name == "Do" {
 				continue
 			}
-
 			str := `"` + fd.Name.Name + `": {`
 			for _, p := range fd.Type.Params.List {
 				for _, n := range p.Names {
+					if n.Name == "ctx" {
+						continue
+					}
 					str += `"` + n.Name + `",`
 				}
 			}
@@ -62,7 +65,6 @@ func main() {
 		}
 	}
 	buf.WriteString("}\n\n")
-
 	buf.WriteString("var methodCommentMap = map[string]string{\n")
 	for _, f := range pkgs[pkgName].Files {
 		for _, d := range f.Decls {
@@ -70,22 +72,16 @@ func main() {
 			if !ok || typ != "Client" || !fd.Name.IsExported() || fd.Name.Name == "Do" {
 				continue
 			}
-
 			str := `"` + fd.Name.Name + `": "` + strings.TrimSpace(strings.Replace(fd.Doc.Text(), "\n", " ", -1)) + "\",\n"
 			buf.WriteString(str)
 		}
 	}
 	buf.WriteString("}\n\n")
-
-	if err = ioutil.WriteFile(*flagOut, buf.Bytes(), 0644); err != nil {
-		log.Fatal(err)
-	}
-
-	cmd := exec.Command("gofmt", "-s", "-w", *flagOut)
-	err = cmd.Run()
+	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return ioutil.WriteFile(out, formatted, 0o644)
 }
 
 // getRecvType returns the receiver type.
@@ -94,7 +90,6 @@ func getRecvType(d ast.Decl) (*ast.FuncDecl, string, bool) {
 	if !ok || fd.Recv == nil {
 		return nil, "", false
 	}
-
 	se, ok := fd.Recv.List[0].Type.(*ast.StarExpr)
 	if !ok {
 		return nil, "", false
@@ -103,7 +98,6 @@ func getRecvType(d ast.Decl) (*ast.FuncDecl, string, bool) {
 	if !ok {
 		return nil, "", false
 	}
-
 	return fd, i.Name, true
 }
 

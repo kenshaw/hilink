@@ -1,89 +1,76 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/knq/hilink"
-)
-
-var (
-	flagEndpoint = flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
-	flagDebug    = flag.Bool("v", false, "enable verbose")
-	flagTo       = flag.String("to", "", "to")
-	flagMsg      = flag.String("msg", "", "message")
-	flagList     = flag.Bool("list", false, "list sms messages in inbox")
-	flagCount    = flag.Uint("c", 50, "message count for -list")
+	"github.com/kenshaw/hilink"
 )
 
 func main() {
-	var err error
-
+	endpoint := flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
+	debug := flag.Bool("v", false, "enable verbose")
+	to := flag.String("to", "", "to")
+	msg := flag.String("msg", "", "message")
+	list := flag.Bool("list", false, "list sms messages in inbox")
+	count := flag.Uint("c", 50, "message count for -list")
 	flag.Parse()
+	if err := run(context.Background(), *endpoint, *debug, *to, *msg, *list, *count); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+}
 
+func run(ctx context.Context, endpoint string, debug bool, to, msg string, list bool, count uint) error {
 	// options
-	opts := []hilink.Option{
-		hilink.URL(*flagEndpoint),
+	opts := []hilink.ClientOption{
+		hilink.WithURL(endpoint),
 	}
-	if *flagDebug {
-		opts = append(opts, hilink.Log(log.Printf, log.Printf))
+	if debug {
+		opts = append(opts, hilink.WithLogf(log.Printf))
 	}
-
 	// create client
-	client, err := hilink.NewClient(opts...)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
+	cl := hilink.NewClient(opts...)
 	// handle list
-	if *flagList {
-		doList(client, hilink.SmsBoxTypeInbox, *flagCount)
-		return
+	if list {
+		return doList(ctx, cl, hilink.SmsBoxTypeInbox, count)
 	}
-
 	// check flags
-	if *flagMsg == "" {
-		fmt.Fprintf(os.Stderr, "error: must specify msg\n")
-		os.Exit(1)
+	if msg == "" {
+		return errors.New("must specify msg")
 	}
-	if *flagTo == "" {
-		fmt.Fprintf(os.Stderr, "error: must specify to\n")
-		os.Exit(1)
+	if to == "" {
+		return errors.New("must specify to")
 	}
-
 	// send sms
-	b, err := client.SmsSend(*flagMsg, *flagTo)
+	ok, err := cl.SmsSend(ctx, msg, to)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-	if !b {
-		fmt.Fprintf(os.Stderr, "could not send message\n")
-		os.Exit(1)
+	if !ok {
+		return errors.New("could not send message")
 	}
-
-	fmt.Fprintf(os.Stdout, "message sent\n")
+	fmt.Fprintln(os.Stdout, "message sent")
+	return nil
 }
 
 // doList lists the sms in the inbox in json format.
-func doList(client *hilink.Client, bt hilink.SmsBoxType, count uint) {
+func doList(ctx context.Context, cl *hilink.Client, bt hilink.SmsBoxType, count uint) error {
 	// get sms counts
-	l, err := client.SmsList(uint(bt), 1, count, false, false, true)
+	l, err := cl.SmsList(ctx, uint(bt), 1, count, false, false, true)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-
 	// convert to json
 	buf, err := json.MarshalIndent(l, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-
-	fmt.Fprintf(os.Stdout, "%s\n", string(buf))
+	_, err = os.Stdout.Write(append(buf, '\n'))
+	return err
 }

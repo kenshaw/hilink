@@ -1,46 +1,44 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/knq/hilink"
-)
-
-var (
-	flagSleep    = flag.Duration("t", 1*time.Second, "sleep duration between ussd api calls")
-	flagEndpoint = flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
-	flagDebug    = flag.Bool("v", false, "enable verbose")
-	flagCheck    = flag.Bool("check", false, "check ussd status")
-	flagCode     = flag.String("code", "", "ussd code to send")
-	flagNoWait   = flag.Bool("nowait", false, "exit immediately after sending ussd code")
-	flagRelease  = flag.Bool("r", false, "release ussd session")
+	"github.com/kenshaw/hilink"
 )
 
 func main() {
-	var err error
-
+	sleep := flag.Duration("t", 1*time.Second, "sleep duration between ussd api calls")
+	endpoint := flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
+	debug := flag.Bool("v", false, "enable verbose")
+	check := flag.Bool("check", false, "check ussd status")
+	code := flag.String("code", "", "ussd code to send")
+	noWait := flag.Bool("nowait", false, "exit immediately after sending ussd code")
+	release := flag.Bool("r", false, "release ussd session")
 	flag.Parse()
+	if err := run(context.Background(), *sleep, *endpoint, *debug, *check, *code, *noWait, *release); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+}
 
+func run(ctx context.Context, sleep time.Duration, endpoint string, debug, check bool, code string, noWait, release bool) error {
 	// options
-	opts := []hilink.Option{
-		hilink.URL(*flagEndpoint),
+	opts := []hilink.ClientOption{
+		hilink.WithURL(endpoint),
 	}
-	if *flagDebug {
-		opts = append(opts, hilink.Log(log.Printf, log.Printf))
+	if debug {
+		opts = append(opts, hilink.WithLogf(log.Printf))
 	}
-
 	// create client
-	client, err := hilink.NewClient(opts...)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if *flagRelease {
-		ok, err := client.UssdRelease()
+	cl := hilink.NewClient(opts...)
+	if release {
+		ok, err := cl.UssdRelease(ctx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
@@ -49,55 +47,38 @@ func main() {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-
 		fmt.Fprintf(os.Stdout, "ussd session released\n")
-		return
+		return nil
 	}
-
-	if *flagCheck {
-		var v hilink.UssdState
-		v, err = doCheck(client)
+	if check {
+		v, err := cl.UssdStatus(ctx)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
+			return err
 		}
-
 		fmt.Fprintf(os.Stdout, "received: %v\n", v)
-		return
+		return nil
 	}
-
-	if *flagCode == "" {
-		fmt.Fprintf(os.Stderr, "error: no code provided\n")
-		os.Exit(1)
+	if code == "" {
+		return errors.New("no code provided")
 	}
-
 	// send ussd code
-	ok, err := client.UssdCode(*flagCode)
+	ok, err := cl.UssdCode(ctx, code)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
 	if !ok {
-		fmt.Fprintf(os.Stderr, "error: could not send ussd code\n")
-		os.Exit(1)
+		return errors.New("could not send ussd code")
 	}
-
 	// bail if not waiting
-	if !*flagNoWait {
-		time.Sleep(*flagSleep)
+	if !noWait {
+		time.Sleep(sleep)
 	}
-
-	time.Sleep(*flagSleep)
-
+	time.Sleep(sleep)
 	// grab content
-	content, err := client.UssdContent()
+	content, err := cl.UssdContent(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-	fmt.Fprintf(os.Stdout, "%s\n", content)
-}
-
-func doCheck(client *hilink.Client) (hilink.UssdState, error) {
-	return client.UssdStatus()
+	_, err = os.Stdout.WriteString(content + "\n")
+	return err
 }

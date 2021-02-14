@@ -1,53 +1,46 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/knq/hilink"
-)
-
-var (
-	flagEndpoint = flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
-	flagDebug    = flag.Bool("v", false, "enable verbose")
+	"github.com/kenshaw/hilink"
 )
 
 func main() {
-	var err error
-
+	endpoint := flag.String("endpoint", "http://192.168.8.1/", "api endpoint")
+	debug := flag.Bool("v", false, "enable verbose")
 	flag.Parse()
+	if err := run(context.Background(), *endpoint, *debug); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+}
 
+func run(ctx context.Context, endpoint string, debug bool) error {
 	// options
-	opts := []hilink.Option{
-		hilink.URL(*flagEndpoint),
+	opts := []hilink.ClientOption{
+		hilink.WithURL(endpoint),
 	}
-	if *flagDebug {
-		opts = append(opts, hilink.Log(log.Printf, log.Printf))
+	if debug {
+		opts = append(opts, hilink.WithLogf(log.Printf))
 	}
-
 	// create client
-	client, err := hilink.NewClient(opts...)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-
+	cl := hilink.NewClient(opts...)
 	// get device info
-	d, err := client.DeviceInfo()
+	d, err := cl.DeviceInfo(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-
 	// change to json
-	v, err := json.MarshalIndent(d, "", "  ")
+	buf, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
-
-	fmt.Fprintf(os.Stdout, "%s\n", string(v))
+	_, err = os.Stdout.Write(append(buf, '\n'))
+	return err
 }

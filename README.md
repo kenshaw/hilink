@@ -8,7 +8,7 @@ Package hilink is a Go package for working with Huawei Hilink devices (ie,
 Install in the normal way:
 
 ```sh
-go get -u github.com/knq/hilink
+$ go get -u github.com/knq/hilink
 ```
 
 # Usage
@@ -142,6 +142,7 @@ updated. Additionally, the stock firmware is missing many useful features, and
 should be flashed to a modified firmware version.
 
 ### Flashing a CL2E3372HM with modified firmware
+
 1. Write down the IMEI number listed on the modem (needed if it is running the 'stick' firmware)
 2. Boot into Windows and plug the CL2E3372HM into the system
 3. Download all the files [here](https://monster.xe-xe.org/files/e3372h/)
