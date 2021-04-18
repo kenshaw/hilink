@@ -80,6 +80,15 @@ func run(ctx context.Context) error {
 	}
 	// create client
 	cl := hilink.NewClient(opts...)
+	// retrieve session id
+	sessID, tokID, err := cl.NewSessionAndTokenID(ctx)
+	if err != nil {
+		return err
+	}
+	// set session id
+	if err := cl.SetSessionAndTokenID(sessID, tokID); err != nil {
+		return err
+	}
 	// push client onto params and execute
 	in[0] = reflect.ValueOf(cl)
 	in[1] = reflect.ValueOf(ctx)

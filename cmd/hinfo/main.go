@@ -31,6 +31,15 @@ func run(ctx context.Context, endpoint string, debug bool) error {
 	}
 	// create client
 	cl := hilink.NewClient(opts...)
+	// retrieve session id
+	sessID, tokID, err := cl.NewSessionAndTokenID(ctx)
+	if err != nil {
+		return err
+	}
+	// set session id
+	if err := cl.SetSessionAndTokenID(sessID, tokID); err != nil {
+		return err
+	}
 	// get device info
 	d, err := cl.DeviceInfo(ctx)
 	if err != nil {
