@@ -8,20 +8,20 @@ Package hilink is a Go package for working with Huawei Hilink devices (ie,
 Install in the normal way:
 
 ```sh
-$ go get -u github.com/knq/hilink
+$ go get -u github.com/kenshaw/hilink
 ```
 
 # Usage
 
 To use the Go API, please see the full API information on
-[GoDoc](http://godoc.org/github.com/knq/hilink).
+[Go ref](http://pkg.go.dev/github.com/kenshaw/hilink).
 
 There is a convenient command line tool, [`hlcli`](cmd/hlcli) that makes
 working with the API extremely easy:
 
 ```sh
 # install hlcli tool
-$ go get -u github.com/knq/hilink/cmd/hlcli
+$ go get -u github.com/kenshaw/hilink/cmd/hlcli
 
 # display available commands
 $ hlcli help
@@ -49,7 +49,7 @@ firmware and WebUI that enables the extra features.
 Here is the relevant information taken from the API using the
 [hinfo](cmd/hinfo) tool:
 ```sh
-$ cd $GOPATH/src/github.com/knq/hilink
+$ cd $GOPATH/src/github.com/kenshaw/hilink
 $ go build ./cmd/hinfo/ && ./hinfo
 {
   "Classify": "hilink",
@@ -114,7 +114,7 @@ provides standard DHCP and is configured to issue addresses in the range of
 Note that a hilink device can be put into "debug" mode which then exposes a
 number of standard `/dev/ttyUSB*` that can then be used to send AT commands.
 This can be done by using this API or by using the `usb_modeswitch` command
-line tool. Please see [GoDoc API](http://godoc.org/github.com/knq/hilink) or
+line tool. Please see [Go ref](http://pkg.go.dev/github.com/kenshaw/hilink) or
 the `usb_modeswitch` manpage.
 
 ## USB Modeswitching
