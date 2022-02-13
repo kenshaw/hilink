@@ -2,5 +2,5 @@ github.com/clbanning/mxj v1.8.4 h1:HuhwZtbyvyOw+3Z1AowPkU87JkJUSv751ELWaiTpj8I=
 github.com/clbanning/mxj v1.8.4/go.mod h1:BVjHeAH+rl9rs6f+QIpeRl0tfu10SXn1pUSa5PVGJng=
 github.com/clbanning/mxj/v2 v2.5.5 h1:oT81vUeEiQQ/DcHbzSytRngP6Ky9O+L+0Bw0zSJag9E=
 github.com/clbanning/mxj/v2 v2.5.5/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn/Qo+ve2s=
-github.com/kenshaw/httplog v0.3.2 h1:rM+IGsRf0xQaVZYKnSzgjWwJzm19L0c3htB1ZoWsv7I=
-github.com/kenshaw/httplog v0.3.2/go.mod h1:1mIAV0a4k32ePm32Ve3oVzzCfPje66oWCLfUOA4l8Pw=
+github.com/kenshaw/httplog v0.4.0 h1:6gevB91JwSsEKB+Q10zxv392t4bLcab/HxfVYBJ0ohs=
+github.com/kenshaw/httplog v0.4.0/go.mod h1:O0bRNzPagLH+kWMB9f+rwFwmjT4MfKcuTy4D6q4/2rU=
