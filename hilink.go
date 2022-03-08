@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"strconv"
 
-	"github.com/clbanning/mxj"
+	"github.com/clbanning/mxj/v2"
 )
 
 // Error is the error type.

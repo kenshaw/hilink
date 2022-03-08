@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/clbanning/mxj"
+	"github.com/clbanning/mxj/v2"
 )
 
 // xmlPairs combines xml name/value pairs as a properly formatted XML buffer.
